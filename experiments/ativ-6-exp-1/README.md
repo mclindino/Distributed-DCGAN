@@ -42,29 +42,29 @@ Todos os seguintes passos utilizam o painel EC2 Management Console da AWS:
   - IPMASTER = IP Privado da máquina mestre.
  
  - Exemplo de aplicação:
-  - Criação de duas instâncias no mesmo grupo de segurança;
-  - Comando utilizado na instância 1:
-    ```
-    ./build_app.sh
-    ./run_app.sh 1 2 0 172.31.82.2
-    ```
-  - Comando utilizado na instância 2:
-    ```
-    ./build_app.sh
-    ./run_app.sh 1 2 1 172.31.91.201
-    ```
-  - Resultados obtidos:
-    - node_0.out
-    ```
-    Rank: 0, Epoch: 0, Training ...
-    [epoch: 0/1][iteration: 0/1563][rank: 0] Loss_D: 1.4761, Loss_G: 4.8173, D(x): 0.6078, D(G(z)): 0.6129 / 0.0084, iteration time: 1.4091s
-    [epoch: 0/1][iteration: 1/1563][rank: 0] Loss_D: 0.8462, Loss_G: 3.4368, D(x): 0.5805, D(G(z)): 0.2374 / 0.0329, iteration time: 1.2433s
-    ```
-    - node_1.out
-    ```
-    Rank: 1, Epoch: 0, Training ...
-    [epoch: 0/1][iteration: 0/1563][rank: 1] Loss_D: 1.5063, Loss_G: 4.8173, D(x): 0.5865, D(G(z)): 0.6129 / 0.0084, iteration time: 1.4221s
-    [epoch: 0/1][iteration: 1/1563][rank: 1] Loss_D: 0.9642, Loss_G: 3.4368, D(x): 0.5177, D(G(z)): 0.2374 / 0.0329, iteration time: 1.2336s
+    - Criação de duas instâncias no mesmo grupo de segurança;
+    - Comando utilizado na instância 1:
+      ```
+      ./build_app.sh
+      ./run_app.sh 1 2 0 172.31.82.2
+      ```
+    - Comando utilizado na instância 2:
+      ```
+      ./build_app.sh
+      ./run_app.sh 1 2 1 172.31.91.201
+      ```
+    - Resultados obtidos:
+      - node_0.out
+      ```
+      Rank: 0, Epoch: 0, Training ...
+      [epoch: 0/1][iteration: 0/1563][rank: 0] Loss_D: 1.4761, Loss_G: 4.8173, D(x): 0.6078, D(G(z)): 0.6129 / 0.0084, iteration time: 1.4091s
+      [epoch: 0/1][iteration: 1/1563][rank: 0] Loss_D: 0.8462, Loss_G: 3.4368, D(x): 0.5805, D(G(z)): 0.2374 / 0.0329, iteration time: 1.2433s
+      ```
+      - node_1.out
+      ```
+      Rank: 1, Epoch: 0, Training ...
+      [epoch: 0/1][iteration: 0/1563][rank: 1] Loss_D: 1.5063, Loss_G: 4.8173, D(x): 0.5865, D(G(z)): 0.6129 / 0.0084, iteration time: 1.4221s
+      [epoch: 0/1][iteration: 1/1563][rank: 1] Loss_D: 0.9642, Loss_G: 3.4368, D(x): 0.5177, D(G(z)): 0.2374 / 0.0329, iteration time: 1.2336s
     ```
 _Modifiar os parâmetros como mostrado no exemplo desse repositório_
 _Também é possível mudar o batch_size e epochs mudando manualmente no script run_app.sh_
