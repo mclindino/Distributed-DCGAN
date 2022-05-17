@@ -51,7 +51,7 @@ Todos os seguintes passos utilizam o painel EC2 Management Console da AWS:
     - Comando utilizado na instância 2:
       ```
       ./build_app.sh
-      ./run_app.sh 1 2 1 172.31.91.201
+      ./run_app.sh 1 2 1 172.31.82.2
       ```
     - Resultados obtidos:
       - node_0.out
