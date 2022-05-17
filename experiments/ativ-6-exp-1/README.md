@@ -67,4 +67,5 @@ Todos os seguintes passos utilizam o painel EC2 Management Console da AWS:
       [epoch: 0/1][iteration: 1/1563][rank: 1] Loss_D: 0.9642, Loss_G: 3.4368, D(x): 0.5177, D(G(z)): 0.2374 / 0.0329, iteration time: 1.2336s
     ```
 _Modifiar os parâmetros como mostrado no exemplo desse repositório_
+
 _Também é possível mudar o batch_size e epochs mudando manualmente no script run_app.sh_
