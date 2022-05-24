@@ -6,35 +6,85 @@
 - name: "Play 1: Configurar e executar a DCGAN em uma máquina."
   hosts: cloud
   tasks:
-  # Teste simples. A mensagem "Teste SSH OK!" deve ser impressa na tela
-  - name: "Task 1: Testando o SSH"
-    debug:
-      msg: "Teste SSH OK!"
+    # Teste simples. A mensagem "Teste SSH OK!" deve ser impressa na tela
+    - name: "Task 1: Testando o SSH"
+      debug:
+        msg: "Teste SSH OK!"
 
-  # Task utilizada para adicionar o usuário ubuntu ao grupo Docker
-  - name: "Task 2: Adicionar usuario ubuntu ao grupo docker"
-    become: true
-    user:
-      name: ubuntu
-      groups: docker
-      append: yes
+    # Task para remover arquivos antigos do Docker 
+    - name: "Task 2: Remove old Docker packages"
+      become: True
+      apt:
+        state: absent
+        pkg:
+          - docker
+          - docker-engine
+          - docker.io
 
-  # Reinicia a conexão SSH
-  - name: "Task 3: Reinicar a conexão ssh para a alterações de grupos tenham efeito"
-    ansible.builtin.meta:
-      reset_connection
+    # Task para instalação do docker   
+    - name: "Task 3: Install Docker"
+      become: True
+      apt:
+        update_cache: yes
+        pkg: 
+          - docker.io
+          - python3-docker
 
-  ###############################################
-  #   Adicione suas tasks a partir daqui..      #
-  ###############################################
+    # Task utilizada para adicionar o usuário ubuntu ao grupo Docker
+    - name: "Task 4: Adicionar usuario ubuntu ao grupo docker"
+      become: true
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
 
+    # Reinicia a conexão SSH
+    - name: "Task 5: Reinicar a conexão ssh para a alterações de grupos tenham efeito"
+      ansible.builtin.meta:
+        reset_connection
+    
+    ###############################################
+    #   Adicione suas tasks a partir daqui..      #
+    ###############################################
 
+    # Clona o repositório
+    - name: "Task 6: Clone repository"
+      ansible.builtin.git:
+        repo: https://github.com/mclindino/Distributed-DCGAN.git
+        dest: /home/ubuntu/Distributed-DCGAN
 
-  ###############################################
-  #   Fim das suas tasks..                      #
-  ###############################################
+    # Cria a imagem docker
+    - name: "Task 7: Build image"
+      community.docker.docker_image:
+        name: dist_dcgan
+        build:
+          path: /home/ubuntu/Distributed-DCGAN
+        source: build
+      async: 600
+      poll: 30
 
-  # Imprime uma mensagem de sucesso
-  - name: "Task N: Final"
-    debug:
-      msg: "Playbook executado com sucesso!"
+    # Roda a aplicação
+    - name: "Task 8: Run application"
+      ansible.builtin.shell: docker run --rm -e HOMERDIT=$(pwd) -w $(pwd) -v=$(pwd):$(pwd) dist_dcgan:latest python -m torch.distributed.launch dist_dcgan.py --dataset mnist --dataroot data --download --image_size 64 --batch_size 128 --out_folder output --test_data --num_epochs 1 --max_workers 1 >> output.txt
+      args:
+        creates: output.txt
+        executable: /bin/bash
+        chdir: /home/ubuntu/Distributed-DCGAN
+      async: 600
+      poll: 30
+      
+    - name: "Task 9: Store output file"
+      become: True
+      ansible.builtin.fetch:
+        src: /home/ubuntu/out.txt
+        dest: /home/msc2022/ra203581/Documents/Distributed-DCGAN/resultados
+        flat: yes
+
+    ###############################################
+    #   Fim das suas tasks..                      #
+    ###############################################
+
+    # Imprime uma mensagem de sucesso
+    - name: "Task N: Final"
+      debug:
+        msg: "Playbook executado com sucesso!"
