@@ -1,0 +1,114 @@
+# Playbook para implantação e execução da DCGAN
+# Você deve adicionar mais tasks a partir do local indicado, abaixo.
+# Lembre-se que a indentação é muito importante.
+# Para mais informações sobre YAML, veja: https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html
+
+- name: "Play para configurar e executar a DCGAN."
+  hosts: cloud
+  vars:
+    efs_host:  "{{ lookup('env', 'EFS_HOST') }}"
+    efs_mount_point: "{{ lookup('env', 'EFS_MOUNT_POINT') }}"
+    cifar_data_dir: "{{ efs_mount_point }}/data/cifar10/"
+    username:  "{{ lookup('env', 'USERNAME') }}"
+    user_dir: "{{ efs_mount_point }}/{{ username }}"
+    results_dir: "{{ user_dir }}/Distributed-DCGAN/output/cluster-{{ ansible_play_hosts | length }}"
+  tasks:
+  # Teste simples. A mensagem "Teste SSH OK!" deve ser impressa na tela
+  - name: "Task 1: Apenas testando o SSH"
+    debug:
+      msg: "Meu nome é {{ inventory_hostname }}. Meu endereço é {{ ansible_host }}. O meu usuário de login é {{ ansible_user }}."
+
+  # Instala todas as dependencias
+  - name: "Task 2: Instala dependencias"
+    become: True
+    apt:
+      update_cache: yes
+      pkg: 
+      - docker.io
+      - python3-docker
+      - nfs-common
+
+  # Task para criar o grupo docker
+  - name: "Task 3: Cria o grupo docker"
+    become: true
+    group:
+      name: docker
+      state: present
+
+  # Task utilizada para adicionar o usuário ubuntu ao grupo Docker
+  - name: "Task 4: Adicionar usuario ubuntu ao grupo docker"
+    become: true
+    user:
+      name: ubuntu
+      groups: docker
+      append: yes
+
+  # Reinicia a conexão SSH
+  - name: "Task 5: Reinicar a conexão ssh para a alterações de grupos tenham efeito"
+    ansible.builtin.meta:
+      reset_connection
+
+  ###############################################
+  #  Adicione suas tasks a partir daqui..       #
+  ###############################################
+
+  - name: "Task 6: Monta o EFS"
+    become: true
+    ansible.posix.mount:
+      path: "{{ efs_mount_point }}"
+      src: "{{ efs_host }}:/"
+      state: mounted
+      fstype: nfs4
+      opts: nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport
+  
+  - name: "Task 7: Cria diretório"
+    become: true
+    file:
+      path: "{{ user_dir }}"
+      state: directory
+    run_once: true
+
+  - name: "Task 8: Clone repositório"
+    ansible.builtin.git:
+      repo: https://github.com/eborin/Distributed-DCGAN.git
+      dest: "{{ user_dir }}/Distributed-DCGAN"
+    run_once: true
+
+  # Cria a imagem docker
+  - name: "Task 9: Build imagem"
+    community.docker.docker_image:
+      name: dist_dcgan
+      build:
+        path: "{{ user_dir }}/Distributed-DCGAN"
+      source: build
+    async: 600
+    poll: 30
+
+  - name: "Task 10: Criar diretório de resultados"
+    become: true
+    file:
+      path: "{{ results_dir }}"
+      state: directory
+      mode: 0777
+    run_once: true
+
+  # Experimento com N cluster
+  - name: "Task 11: Executar a DCGAN"
+    ansible.builtin.shell: docker run --network=host --rm -e HOMEDIR=$(pwd) -w $(pwd) -v={{ cifar_data_dir }}:{{ cifar_data_dir }} -v=$(pwd):$(pwd) dist_dcgan:latest python -m torch.distributed.launch --nproc_per_node=1 --nnodes={{ ansible_play_hosts | length }} --node_rank={{ node_rank }} --master_addr="{{ hostvars['node0'].ansible_host }}" --master_port=1234 dist_dcgan.py --dataset cifar10 --dataroot {{ cifar_data_dir }} --image_size 64 --batch_size 128 --out_folder {{ results_dir }} --test_data --num_epochs 2 --max_workers 1 > {{ results_dir }}/output-{{ node_rank }}.txt
+    args:
+      chdir: "{{ user_dir }}/Distributed-DCGAN"
+    async: 1600
+    
+
+  ###############################################
+  #   Fim das suas tasks..                      #
+  ###############################################
+  - name: "Task 12: Copia os arquivos output-*.txt"
+    fetch:
+      src: "{{ results_dir }}/output-{{ node_rank }}.txt"
+      dest: "./results/cluster-{{ ansible_play_hosts | length }}"
+
+  # Imprime uma mensagem de sucesso
+  - name: "Task 13: Final"
+    debug:
+      msg: "Playbook executado com sucesso!"
