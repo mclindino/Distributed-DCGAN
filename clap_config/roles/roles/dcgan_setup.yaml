@@ -1,0 +1,56 @@
+- name: "Acao de setup"
+  hosts: all
+  tasks:
+  # Teste simples. A mensagem "Teste SSH OK!" deve ser impressa na tela
+  - name: "Task 1: Lista as variáveis recebidas"
+    debug:
+      msg: "Variaveis: efs_host: {{ efs_host }}; efs_mount_point: {{ efs_mount_point }}; user_dir: {{ user_dir }}"
+
+  # Instala todas as dependencias
+  - name: "Task 2: Instala dependencias"
+    become: True
+    apt:
+      update_cache: yes
+      pkg: 
+      - docker.io
+      - python3-docker
+      - nfs-common
+
+  # Task para criar o grupo docker
+  - name: "Task 3: Cria o grupo docker"
+    become: true
+    group:
+      name: docker
+      state: present
+
+  # Task utilizada para adicionar o usuário ubuntu ao grupo Docker
+  - name: "Task 4: Adicionar usuario ubuntu ao grupo docker"
+    become: true
+    user:
+      name: ubuntu
+      groups: docker
+      append: yes
+
+  # Reinicia a conexão SSH
+  - name: "Task 5: Reinicia a conexão ssh para que a alterações de grupos tenham efeito"
+    ansible.builtin.meta:
+      reset_connection
+
+  - name: "Task 6: Monta o EFS"
+    become: true
+    ansible.posix.mount:
+      path: "{{ efs_mount_point }}"
+      src: "{{ efs_host }}:/"
+      state: mounted
+      fstype: nfs4
+      opts: nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport
+
+  # Cria a imagem docker
+  - name: "Task 9: Build imagem"
+    community.docker.docker_image:
+      name: dist_dcgan
+      build:
+        path: "{{ user_dir }}/Distributed-DCGAN"
+      source: build
+    async: 600
+    poll: 30

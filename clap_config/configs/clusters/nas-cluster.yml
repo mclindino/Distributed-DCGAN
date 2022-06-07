@@ -1,0 +1,24 @@
+setups:
+  npb-install:
+    roles:
+    - name: npb
+      extra:
+        pubkey: ~/clap_config/private/key.pub
+        privkey: ~/clap_config/private/key.pem
+
+  launch-mpi-npb:
+    actions:
+    - role: npb
+      action: run
+
+clusters:
+  npb-cluster:
+    nodes:
+      npb-type-t2.medium:
+        type: type-t2.medium
+        count: 2
+        setups:
+        - npb-install
+
+    after_all:
+    - launch-mpi-npb

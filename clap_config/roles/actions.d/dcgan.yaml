@@ -1,0 +1,34 @@
+---
+actions:
+  setup:
+    playbook: roles/dcgan_setup.yaml
+    description: Setup DCGAN (download, mount EFS, and build docker)
+    vars:
+    - name: efs_host
+      description: EFS host (IP or DNS)
+    - name: efs_mount_point
+      description: Location where EFS filesystem will be mounted
+    - name: user_dir
+      description: Location where user files resides on EFS
+
+  run:
+    playbook: roles/dcgan_run.yaml
+    description: Run DCGAN in all nodes
+    vars:
+    - name: efs_mount_point
+      description: Location where EFS filesystem will be mounted
+    - name: user_dir
+      description: Location where user files resides on EFS
+    - name: cifar_data_dir
+      description: Location where CIFAR-10 is located
+    - name: master_hostname
+      descrition: Hostname of the master node
+
+  results:
+    playbook: roles/dcgan_results.yaml
+    description: Fetch results
+    vars:
+    - name: results_dir
+      description: Location where results should be placed (in local machine)
+    - name: user_dir
+      description: Location where user files resides on EFS

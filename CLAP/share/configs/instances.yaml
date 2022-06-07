@@ -1,0 +1,15 @@
+type-t2.small:
+    provider: aws-config-us-east-1
+    login: login-ubuntu
+    flavor: t2.small
+    image_id: ami-0c4f7023847b90238
+    security_group: open-security-group
+
+type-t2.medium:
+    provider: aws-config-us-east-1
+    login: login-ubuntu
+    flavor: t2.medium
+    image_id: ami-0c4f7023847b90238
+    security_group: open-security-group
+    boot_disk_size: 16
+

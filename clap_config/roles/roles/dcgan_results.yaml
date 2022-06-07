@@ -1,0 +1,12 @@
+- name: "Acao de resultados"
+  hosts: all
+  gather_facts: true
+  tasks:
+  - name: "Task 1: Lista as variáveis recebidas"
+    debug:
+      msg: "Variaveis: results_dir: {{ results_dir }}; user_dir: {{ user_dir }}; results_remote: {{ results_remote }}"
+  
+  - name: "Task 2: Copia os arquivos output-*.txt"
+    fetch:
+      src: "{{ results_remote }}/output-{{ node_rank }}.txt"
+      dest: "{{ results_dir }}/cluster-{{ ansible_play_hosts | length }}"
